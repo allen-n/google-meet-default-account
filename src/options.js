@@ -28,7 +28,7 @@ function validateInput() {
 
 function loadConfig() {
     var initialValue = chrome.storage.sync.get({
-        authuser: '',
+        authuser: 0,
     }, function(result) {
         authuserInput.value = result.authuser;
         validateInput();

@@ -1,19 +1,40 @@
 {
-	"name": "Google Meet Default Account",
-	"version": "1.0",
-	"manifest_version": 2,
-    "description": "Set the default account for google meet for users who are signed in to multiple Google accounts. Icon from Font Awesome.",
-    "permissions": ["storage", "webRequest", "webRequestBlocking", "https://meet.google.com/*"],
+    "name": "Google Apps Default Account",
+    "version": "1.0",
+    "manifest_version": 2,
+    "description": "Set the default account for google apps for users who are signed in to multiple Google accounts. Icon from Font Awesome.",
+    "permissions": [
+        "storage",
+        "webRequest",
+        "webRequestBlocking",
+        "*://*.google.com/"
+    ],
     "icons": {
         "16": "headset_16.png",
         "48": "headset_48.png",
         "128": "headset_128.png"
-      },
-	"background": {
-		"scripts": ["background.js"]
+    },
+    "background": {
+        "scripts": [
+            "background.js"
+        ]
     },
     "options_ui": {
         "page": "options.html",
-        "open_in_tab": false
+        "open_in_tab": true
+    },
+    "browser_action": {
+        "default_popup": "popup.html",
+        "default_icon": "headset.png"
+    },
+    "commands": {
+        "_execute_browser_action": {
+            "suggested_key": {
+                "windows": "Ctrl+Shift+A",
+                "mac": "Command+Shift+A",
+                "chromeos": "Ctrl+Shift+A",
+                "linux": "Ctrl+Shift+A"
+            }
+        }
     }
 }
