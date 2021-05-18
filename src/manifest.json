@@ -7,7 +7,8 @@
         "storage",
         "webRequest",
         "webRequestBlocking",
-        "*://*.google.com/"
+        "*://*.google.com/",
+        "tabs"
     ],
     "icons": {
         "16": "headset_16.png",
@@ -24,7 +25,6 @@
         "open_in_tab": true
     },
     "browser_action": {
-        "default_popup": "popup.html",
         "default_icon": "headset.png"
     },
     "commands": {

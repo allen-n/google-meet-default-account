@@ -28,6 +28,63 @@ const uApps = new Map([
     ["photos.google.com", ""],
 ]);
 
+/**
+ * All apps the extension works with
+ */
+const allApps = new Map([...uApps, ...authApps])
+
+/**
+ * A helper function to return the google app name on full google
+ * app url (x.google.com) 
+ * 
+ * @param {String} url the full url of the google web app
+ * 
+ * @return {String} the app name, empty string if no app name matches
+ */
+function url2AppName(url) {
+    var appRegex = /[\w]{0,20}[\.]?google\.com/;
+    var appName = url.match(appRegex);
+    if (appName) {
+        appName = appName[0]
+    } else {
+        appName = ""
+    }
+    return appName;
+}
+
+/**
+ * A helper function to return the user # based on google
+ * app url (x.google.com) regardless of authuser or /u/ user
+ * numbering method 
+ * 
+ * @param {String} url the full url of the google web app
+ * 
+ * @return {Number} the authuser number
+ */
+function url2UserNum(url) {
+    var appName = url2AppName(url);
+    const uRegex = /(\/u\/\d){1}(\d)?/; // matches /u/##
+    const authRegex = /(authuser=\d){1}(\d)?/; // matches authuser=##
+    const userNumRegex = /\d\d?/;  //matches the # part of authuser=##
+    var userNum = 0;
+    var matches;
+
+    // var returnUrl = "";
+
+    if (authApps.has(String(appName))) {
+        matches = url.match(authRegex);
+
+    }
+    if (uApps.has(String(appName))) {
+        matches = url.match(uRegex);
+    }
+
+    if (matches) {
+        userNum = Number(matches[0].match(userNumRegex)[0]);
+    }
+    return userNum;
+}
+
 
 /**
  * Handler for /u/# user specification app redirect
@@ -105,10 +162,61 @@ function handleAuthApp(url, userNum, appName) {
     return returnURL;
 }
 
+// TODO fix this, make it user modifyable
+var isUserLocked = false; // if user is locked, redirect and don't let authuser update 
+
+/**
+ * 
+ * @param {String} badgeText the text to be put on the extension badge
+ */
+function updateBadgeText(badgeText) {
+    chrome.browserAction.setBadgeText({ text: badgeText }); // We have 10+ unread items.
+}
+
+function lockAuthUserNum() {
+
+    isUserLocked = true;
+    chrome.tabs.query({ active: true, lastFocusedWindow: true }, tabs => {
+        let url = tabs[0].url;
+        let appName = url2AppName(url);
+        let userNum = 0;
+        if (allApps.has(appName)) {
+            userNum = url2UserNum(url);
+        }
+        updateBadgeText(String(userNum));
+
+        chrome.storage.sync.set({
+            authuser: userNum,
+        }, function () {
+            authUser = userNum;
+        });
+    });
+}
+
+function unlockAuthUserNum() {
+    isUserLocked = false;
+    updateBadgeText("");
+}
+
+chrome.browserAction.onClicked.addListener(
+    function (tab) {
+        if (isUserLocked) {
+            unlockAuthUserNum();
+        } else {
+            lockAuthUserNum();
+        }
+    });
+
+
+
 chrome.webRequest.onBeforeRequest.addListener(function (details) {
-    var appRegex = /[\w]{0,20}[\.]?google\.com/;
-    var appName = details.url.match(appRegex)[0];
+    // var appRegex = /[\w]{0,20}[\.]?google\.com/;
+    var appName = url2AppName(details.url); // details.url.match(appRegex)[0];
     var returnUrl = "";
+    // if (allApps.has(appName)) {
+    //     console.log(`${appName} user number is ==> ${url2UserNum(details.url)}`)
+    // }
+
 
     if (String(appName) == "mail.google.com") {
         if (details.method != "POST" && details.type != "xmlhttprequest") {
@@ -127,7 +235,7 @@ chrome.webRequest.onBeforeRequest.addListener(function (details) {
         }
     }
 
-    if (returnUrl != "" && returnUrl != details.url) {
+    if (isUserLocked && returnUrl != "" && returnUrl != details.url) {
         return {
             redirectUrl: returnUrl
         };
